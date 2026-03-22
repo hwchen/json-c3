@@ -59,7 +59,7 @@ macro void? add_json(src, DString* dest) {
 			int members_written;
 			$foreach $member : $typeof(src).membersof:
 				$if ($member.kindof == TypeKind.UNION):
-					return UNION_NOT_SUPPORTED?;
+					return UNION_NOT_SUPPORTED~;
 				$else
 					// check for @tag("json", "skip_empty")
 					bool $memb_is_maybe_skip = false;
@@ -108,7 +108,7 @@ macro void? add_json(src, DString* dest) {
 			dest.append("]");
 			return;
 		$case TypeKind.UNION:
-			return UNION_NOT_SUPPORTED?;
+			return UNION_NOT_SUPPORTED~;
 	$endswitch
 
 	// TODO add error here if type not supported?
@@ -118,7 +118,7 @@ macro void? add_json(src, DString* dest) {
 // in the macro body call.
 macro void? add_hashmap(src, DString* dest) {
 	$if (!@starts_with($typeof(src).nameof, "HashMap{")):
-		return EXPECTED_HASHMAP?;
+		return EXPECTED_HASHMAP~;
 	$endif
 
 	dest.append("{");

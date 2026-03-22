@@ -19,6 +19,7 @@ build "example-basic" {
 }
 
 build "testrun" {
+    capture false
     from glob "*.c3"
     run "c3c --test-nocapture --suppress-run compile-test <in*> -o <out>"
 }

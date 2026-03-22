@@ -47,7 +47,7 @@ fn void Lexer.skip_whitespace(&l) {
 
 fn Tag? Lexer.next(&l) {
 	if (l.curr >= l.buffer.len) {
-		return LEX_EOF?;
+		return LEX_EOF~;
 	}
 
 	// forward whitespace
@@ -131,9 +131,9 @@ fn Tag? Lexer.next(&l) {
 				return STRING;
 			}
 		default:
-			return LEX_MALFORMED?;
+			return LEX_MALFORMED~;
 	}
-	return LEX_MALFORMED?;
+	return LEX_MALFORMED~;
 }
 
 faultdef

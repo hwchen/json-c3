@@ -1,5 +1,6 @@
 module json::serialize;
 import std::core;
+import std::io;
 
 macro void? add_json(src, DString* dest) {
 	$if ($defined($typeof(src).to_json)):
@@ -37,8 +38,9 @@ macro void? add_json(src, DString* dest) {
 			$endif
 			dest.appendf(`"`);
 		$case TypeKind.STRUCT:
+			String $struct_name = $typeof(src).nameof;
 			// Check Maybe first
-			$if ($typeof(src).nameof == "Maybe"):
+			$if (@starts_with($struct_name, "Maybe{")):
 				if (src.has_value) {
 					add_json(src.$eval($typeof(src).membersof[0].nameof), dest)!!;
 				} else {
@@ -47,7 +49,7 @@ macro void? add_json(src, DString* dest) {
 				return;
 			$endif
 
-			$if ($typeof(src).nameof == "HashMap"):
+			$if (@starts_with($struct_name, "HashMap{")):
 				add_hashmap(src, dest)!!;
 				return;
 			$endif
@@ -61,7 +63,9 @@ macro void? add_json(src, DString* dest) {
 				$else
 					// check for @tag("json", "skip_empty")
 					bool $memb_is_maybe_skip = false;
-					$if ($typefrom($member.typeid).nameof == "Maybe"):
+					String $member_name = $member.nameof;
+					typeid $member_type = $typefrom($member.typeid);
+					$if (@starts_with($member_type.nameof, "Maybe{")):
 						$if ($member.has_tagof("json")):
 							$if ($member.tagof("json") == "skip_empty"):
 								$memb_is_maybe_skip = true;
@@ -71,7 +75,7 @@ macro void? add_json(src, DString* dest) {
 
 					// TODO clean up this logic. compile time and runtime interaction is a bit messy
 					$if ($memb_is_maybe_skip):
-						if (!src.$eval($member.nameof).has_value) {
+						if (!src.$eval($member_name).has_value) {
 						// do nothing
 						} else {
 							if (members_written > 0) {
@@ -113,7 +117,7 @@ macro void? add_json(src, DString* dest) {
 // Using iter; with the @each_entry, didn't like using var
 // in the macro body call.
 macro void? add_hashmap(src, DString* dest) {
-	$if ($typeof(src).nameof != "HashMap"):
+	$if (!@starts_with($typeof(src).nameof, "HashMap{")):
 		return EXPECTED_HASHMAP?;
 	$endif
 
@@ -136,3 +140,11 @@ macro void? add_hashmap(src, DString* dest) {
 }
 
 faultdef UNION_NOT_SUPPORTED, EXPECTED_HASHMAP;
+
+macro @starts_with($s, $prefix) {
+	$switch:
+		$case $prefix.len > $s.len: return false;
+		$case !$prefix.len: return true;
+		$default: return $s[:$prefix.len] == $prefix;
+	$endswitch
+}

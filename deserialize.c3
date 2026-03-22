@@ -17,7 +17,7 @@ macro parse($Type, Allocator alloc, Lexer* lex) {
 	// Maybe needs to be checked before `lex.next()`
 	$switch ($Type.kindof):
 		$case TypeKind.STRUCT:
-			$if ($Type.nameof == "Maybe"):
+			$if (@starts_with($Type.nameof, "Maybe{")):
 				// TODO can I name type in a variable?
 				if (try value = parse($typefrom($Type.membersof[0].typeid), alloc, lex)) {
 					return maybe::value{$typefrom($Type.membersof[0].typeid)}(value);
@@ -123,3 +123,11 @@ faultdef
 	UNION_NOT_SUPPORTED,
 	PARSE_ARRAY_END, // TODO fix this hack
 ;
+
+macro @starts_with($s, $prefix) {
+	$switch:
+		$case $prefix.len > $s.len: return false;
+		$case !$prefix.len: return true;
+		$default: return $s[:$prefix.len] == $prefix;
+	$endswitch
+}

@@ -20,7 +20,7 @@ enum Tag {
 
 // Currently non-streaming
 struct Lexer {
-	int curr;
+	sz curr;
 	// currently just all input, no stream.
 	String buffer;
 	char[] token_slice;
@@ -74,7 +74,7 @@ fn Tag? Lexer.next(&l) {
 				return FALSE;
 			}
 		case '0'..'9':
-			int len = 1;
+			sz len = 1;
 			while LOOP: (true) {
 				if (l.curr + len >= l.buffer.len) {
 					break LOOP;
@@ -108,7 +108,7 @@ fn Tag? Lexer.next(&l) {
 		// string or field name
 		case '"':
 			l.curr += 1;
-			int len;
+			sz len;
 			while LOOP: (true) {
 				switch (l.buffer[l.curr + len]) {
 					case '"':

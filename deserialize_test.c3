@@ -101,8 +101,8 @@ fn void test_enum() @test {
 }
 
 enum MyEnumAssoc : char (String json_repr) {
-	FOO = "foo",
-	BAR = "bar",
+	FOO { "foo" },
+	BAR { "bar" },
 }
 fn void test_enum_associated_value() @test {
 	MyEnumAssoc my = json::from_str(MyEnumAssoc, tmem, `"bar"`)!!;

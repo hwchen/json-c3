@@ -28,21 +28,21 @@ macro void? add_json(src, DString* dest) {
 	$endswitch
 
 	// Switch on complex types
-	$switch ($typeof(src).kindof):
+	$switch ($typeof(src)::kind):
 		$case TypeKind.ENUM:
 			dest.appendf(`"`);
 			$if ($defined($typeof(src).json_repr)):
 				dest.appendf(src.json_repr);
 			$else
-				dest.appendf(src.nameof);
+				dest.appendf(src.description);
 			$endif
 			dest.appendf(`"`);
 		$case TypeKind.STRUCT:
-			String $struct_name = $typeof(src).nameof;
+			String $struct_name = $typeof(src)::name;
 			// Check Maybe first
 			$if (@starts_with($struct_name, "Maybe{")):
 				if (src.has_value) {
-					add_json(src.$eval($typeof(src).membersof[0].nameof), dest)!!;
+					add_json(src.$eval($typeof(src)::members[0].name), dest)!!;
 				} else {
 					dest.appendf("null");
 				}
@@ -57,17 +57,18 @@ macro void? add_json(src, DString* dest) {
 			// Not Maybe, just regular struct
 			dest.append("{");
 			int members_written;
-			$foreach $member : $typeof(src).membersof:
-				$if ($member.kindof == TypeKind.UNION):
+			$foreach $member : $typeof(src)::members:
+				// TODO why not just kind directly?
+				$if ($member.type.kind == TypeKind.UNION):
 					return UNION_NOT_SUPPORTED~;
 				$else
 					// check for @tag("json", "skip_empty")
 					bool $memb_is_maybe_skip = false;
-					String $member_name = $member.nameof;
-					typeid $member_type = $typefrom($member.typeid);
-					$if (@starts_with($member_type.nameof, "Maybe{")):
-						$if ($member.has_tagof("json")):
-							$if ($member.tagof("json") == "skip_empty"):
+					String $member_name = $member.name;
+					typeid $member_type = $member.type;
+					$if (@starts_with($member_type.name, "Maybe{")):
+						$if ($member.has_tag("json")):
+							$if ($member.get_tag("json") == "skip_empty"):
 								$memb_is_maybe_skip = true;
 							$endif
 						$endif
@@ -81,16 +82,16 @@ macro void? add_json(src, DString* dest) {
 							if (members_written > 0) {
 								dest.append(",");
 							}
-							dest.appendf(`"%s":`, $member.nameof);
-							add_json(src.$eval($member.nameof), dest)!!;
+							dest.appendf(`"%s":`, $member.name);
+							add_json(src.$eval($member.name), dest)!!;
 							members_written += 1;
 						}
 					$else
 						if (members_written > 0) {
 							dest.append(",");
 						}
-						dest.appendf(`"%s":`, $member.nameof);
-						add_json(src.$eval($member.nameof), dest)!!;
+						dest.appendf(`"%s":`, $member.name);
+						add_json(src.$eval($member.name), dest)!!;
 						members_written += 1;
 					$endif
 				$endif
@@ -117,7 +118,7 @@ macro void? add_json(src, DString* dest) {
 // Using iter; with the @each_entry, didn't like using var
 // in the macro body call.
 macro void? add_hashmap(src, DString* dest) {
-	$if (!@starts_with($typeof(src).nameof, "HashMap{")):
+	$if (!@starts_with($typeof(src)::name, "HashMap{")):
 		return EXPECTED_HASHMAP~;
 	$endif
 

@@ -15,14 +15,14 @@ macro parse($Type, Allocator alloc, Lexer* lex) {
 	$endif
 
 	// Maybe needs to be checked before `lex.next()`
-	$switch ($Type.kindof):
+	$switch ($Type::kind):
 		$case TypeKind.STRUCT:
-			$if (@starts_with($Type.nameof, "Maybe{")):
+			$if (@starts_with($Type::name, "Maybe{")):
 				// TODO can I name type in a variable?
-				if (try value = parse($typefrom($Type.membersof[0].typeid), alloc, lex)) {
-					return maybe::value{$typefrom($Type.membersof[0].typeid)}(value);
+				if (try value = parse($Type::members[0].type, alloc, lex)) {
+					return maybe::value{$Type::members[0].type}(value);
 				} else if (lex.token_slice == "null") {
-					return maybe::EMPTY{$typefrom($Type.membersof[0].typeid)};
+					return maybe::EMPTY{$Type::members[0].type};
 				} else {
 					return PARSE_ERROR~;
 				}
@@ -54,17 +54,17 @@ macro parse($Type, Allocator alloc, Lexer* lex) {
 	$endswitch
 
 	// Switch on complex types
-	$switch ($Type.kindof):
+	$switch ($Type::kind):
 		$case TypeKind.ENUM:
 			switch(first_tag) {
 				case STRING:
-					$foreach $value : $Type.values:
+					$foreach $value : $Type::values:
 						$if ($defined($Type.json_repr)):
 							if ($value.json_repr == lex.token_slice) {
 								return $value;
 							}
 						$endif
-						if ($value.nameof == lex.token_slice) {
+						if ($value.description == lex.token_slice) {
 							return $value;
 						}
 					$endforeach
@@ -80,12 +80,12 @@ macro parse($Type, Allocator alloc, Lexer* lex) {
 				if (tag == OBJ_END) break;
 				if (tag != FIELD_NAME) return PARSE_ERROR~;
 				String field_name = (String)lex.token_slice;
-				$foreach $member : $Type.membersof:
-					$if ($member.kindof == TypeKind.UNION):
+				$foreach $member : $Type::members:
+					$if ($member.type.kind == TypeKind.UNION):
 						return UNION_NOT_SUPPORTED~;
 					$else
-						if (field_name == $member.nameof) {
-							obj.$eval($member.nameof) = parse($typefrom($member.typeid), alloc, lex)!!;
+						if (field_name == $member.name) {
+							obj.$eval($member.name) = parse($member.type, alloc, lex)!!;
 							// break; no break in compile-time foreach?
 						}
 					$endif
@@ -96,11 +96,11 @@ macro parse($Type, Allocator alloc, Lexer* lex) {
 		$case TypeKind.SLICE:
 			if (first_tag != ARRAY_START) return PARSE_ERROR~;
 			@pool() {
-				List{$typefrom($Type.inner)} arr;
+				List{$typefrom($Type::inner)} arr;
 				arr.tinit();
 
 				while (true) {
-					var value = parse($typefrom($Type.inner), alloc, lex);
+					var value = parse($typefrom($Type::inner), alloc, lex);
 					if (catch err = value) {
 						// This is a hacky way to catch the end of the array.
 						// But checking the tag will advance one. FIX

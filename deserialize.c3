@@ -96,11 +96,11 @@ macro parse($Type, Allocator alloc, Lexer* lex) {
 		$case TypeKind.SLICE:
 			if (first_tag != ARRAY_START) return PARSE_ERROR~;
 			@pool() {
-				List{$typefrom($Type::inner)} arr;
+				List{$Typefrom($Type::inner)} arr;
 				arr.tinit();
 
 				while (true) {
-					var value = parse($typefrom($Type::inner), alloc, lex);
+					var value = parse($Typefrom($Type::inner), alloc, lex);
 					if (catch err = value) {
 						// This is a hacky way to catch the end of the array.
 						// But checking the tag will advance one. FIX

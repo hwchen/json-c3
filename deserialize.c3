@@ -100,7 +100,11 @@ macro parse($Type, Allocator alloc, Lexer* lex) {
 				arr.tinit();
 
 				while (true) {
-					var value = parse($Typefrom($Type::inner), alloc, lex);
+					$Typefrom($Type::inner)? value = parse(
+						$Typefrom($Type::inner),
+						alloc,
+						lex
+					);
 					if (catch err = value) {
 						// This is a hacky way to catch the end of the array.
 						// But checking the tag will advance one. FIX
